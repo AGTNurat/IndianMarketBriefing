@@ -74,24 +74,6 @@ def fetch_market_data(df):
                 
                 current_prices[ticker] = current_price
                 percent_changes[ticker] = change
-            elif len(ticker_series) == 1:
-                current_prices[ticker] = ticker_series.iloc[-1]
-                percent_changes[ticker] = 0.0 # Can't calc change
-            else:
-                current_prices[ticker] = 0.0
-                percent_changes[ticker] = 0.0
-        except Exception as e:
-            print(f"Error processing {ticker}: {e}")
-            current_prices[ticker] = 0.0
-            percent_changes[ticker] = 0.0
-            
-    return current_prices, percent_changes
-
-def calculate_performance(df, current_prices, percent_changes):
-    """Calculates P&L and identifies top movers."""
-    
-    df['CurrentPrice'] = df['Symbol'].map(current_prices)
-    df['ChangePct'] = df['Symbol'].map(percent_changes)
     
     # Calculate Daily P&L
     # Daily P&L = (Current Price - Previous Close) * Quantity
@@ -194,21 +176,6 @@ def generate_analysis(perf_data, index_data, news_data):
 
 def send_telegram_report(report):
     """Sends the report to Telegram."""
-    print("Sending report to Telegram...")
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": CHAT_ID,
-        "text": report
-    }
-    response = requests.post(url, json=payload)
-    if response.status_code != 200:
-        print(f"Failed to send message: {response.text}")
-    else:
-        print("Report sent successfully!")
-
-import schedule
-import datetime
-import pytz
 
 # ... (existing imports and setup)
 
@@ -230,10 +197,16 @@ def run_briefing():
     print(f"Starting briefing job at {datetime.datetime.now()}")
     
     # 1. Market Open Guardrails
-    # Check if today is Saturday (5) or Sunday (6)
-    today = datetime.datetime.now().weekday()
+    # Check if today is Saturday (5) or Sunday (6) IN EST
+    est = pytz.timezone('US/Eastern')
+    now_est = datetime.datetime.now(est)
+    today = now_est.weekday()
+    
+    print(f"Current EST Time: {now_est}")
+    print(f"Weekday (0=Mon, 6=Sun): {today}")
+    
     if today >= 5:
-        print("Today is a weekend. Skipping briefing.")
+        print("Today is a weekend (in EST). Skipping briefing.")
         return
 
     try:
@@ -250,32 +223,6 @@ def run_briefing():
         
         # 5. Prepare Index Data
         index_data = {
-            "^NSEI": {"price": current_prices.get("^NSEI", 0), "change": percent_changes.get("^NSEI", 0)},
-            "^BSESN": {"price": current_prices.get("^BSESN", 0), "change": percent_changes.get("^BSESN", 0)}
-        }
-        
-        # 6. Fetch News for Indices + Top Movers
-        movers = perf['top_gainers']['Symbol'].tolist() + perf['top_losers']['Symbol'].tolist()
-        search_queries = ["NIFTY 50"] + movers
-        search_queries = list(set(search_queries))
-        
-        news = fetch_news(search_queries)
-        
-        # 7. Generate Analysis
-        report = generate_analysis(perf, index_data, news)
-        
-        # 8. Send Report
-        send_telegram_report(report)
-        
-    except Exception as e:
-        print(f"Error in run_briefing: {e}")
-        send_error_alert(str(e))
-
-def job():
-    """Scheduler job wrapper."""
-    run_briefing()
-
-if __name__ == "__main__":
     # Check if running in GitHub Actions
     if os.getenv("GITHUB_ACTIONS") == "true":
         print("Running in GitHub Actions mode (Single Run)...")

@@ -1,0 +1,20 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="streamlit" />
+          <option value="pandas" />
+          <option value="numpy" />
+          <option value="joblib" />
+          <option value="xgboost" />
+          <option value="breeze-connect" />
+          <option value="flask" />
+          <option value="ta" />
+          <option value="pandas-ta" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
