@@ -1,0 +1,8 @@
+pandas
+yfinance
+feedparser
+google-generativeai
+python-dotenv
+requests
+schedule
+pytz
